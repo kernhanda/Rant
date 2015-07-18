@@ -80,24 +80,21 @@ var Rant;
             for (var _i = 0; _i < arguments.length; _i++) {
                 args[_i - 0] = arguments[_i];
             }
-            var picked = [];
+            var numPicked = 0;
             var argsCopy = [];
             argsCopy = argsCopy.concat.apply(argsCopy, args);
             return function (seed) {
                 _this.pushSeed(seed);
-                var interestedLength = argsCopy.length - picked.length;
-                console.log("argsCopy.length: " + argsCopy.length);
-                console.log("picked.length: " + picked.length);
-                console.log("interestedLength:" + interestedLength);
+                var interestedLength = argsCopy.length - numPicked;
                 if (interestedLength <= 0) {
-                    picked.length = 0;
+                    numPicked = 0;
                     interestedLength = argsCopy.length;
                 }
                 var pickedIndex = Math.floor(_this.currentRng.quick() * interestedLength);
-                picked.push(pickedIndex);
+                ++numPicked;
                 var val = argsCopy[pickedIndex];
                 argsCopy[pickedIndex] = argsCopy[interestedLength - 1];
-                argsCopy[pickedIndex - 1] = val;
+                argsCopy[interestedLength - 1] = val;
                 if (isFunction(val)) {
                     val = val();
                 }

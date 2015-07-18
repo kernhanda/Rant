@@ -79,24 +79,24 @@ export class RantEngine {
   }
 
   Shuffle<T>(...args : Ranting<T>[]) : RantExpression<T> {
-      let picked: number[] = [];
+      let numPicked = 0;
       let argsCopy: T[] | T[][] | RantExpression<T>[] = [];
       argsCopy = argsCopy.concat.apply(argsCopy, args);
       return (seed?: number | string): T | T[] => {
         this.pushSeed(seed);
-        let interestedLength = argsCopy.length - picked.length;
-        console.log("argsCopy.length: " + argsCopy.length);
-        console.log("picked.length: " + picked.length);
-        console.log("interestedLength:" + interestedLength);
+
+        let interestedLength = argsCopy.length - numPicked;
         if (interestedLength <= 0) {
-          picked.length = 0;
+          numPicked = 0;
           interestedLength = argsCopy.length;
         }
+
         let pickedIndex = Math.floor(this.currentRng.quick() * interestedLength);
-        picked.push(pickedIndex);
+        ++numPicked;
+
         let val:T|T[]|RantExpression<T> = argsCopy[pickedIndex];
         argsCopy[pickedIndex] = argsCopy[interestedLength - 1];
-        argsCopy[pickedIndex - 1] = val;
+        argsCopy[interestedLength - 1] = val;
 
         if (isFunction(val)) {
           val = (<RantExpression<T>>val)();
