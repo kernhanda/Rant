@@ -25,7 +25,7 @@ var Rant;
             }
         };
         RantEngine.prototype.evaluate = function (rant) {
-            return isFunction(rant) ? arguments.callee(rant) : rant;
+            return isFunction(rant) ? arguments.callee(rant()) : rant;
         };
         RantEngine.prototype.Fixed = function () {
             var _this = this;

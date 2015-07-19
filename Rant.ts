@@ -39,7 +39,7 @@ module Rant {
     }
 
     private evaluate<T>(rant: Ranting<T>): T | T[] {
-      return isFunction(rant) ? arguments.callee(rant) : rant;
+      return isFunction(rant) ? arguments.callee((<Expression<T>>rant)()) : rant;
     }
 
     Fixed<T>(...args: Ranting<T>[]): RantExpression<T> {
