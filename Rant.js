@@ -2,15 +2,17 @@
 /// <reference path="typings/node/node.d.ts"/>
 /// <reference path="typings/seedrandom/seedrandom.d.ts"/>
 var seedrandom = require("seedrandom");
+"use strict";
 var Rant;
 (function (Rant) {
-    function isFunction(func) {
-        return func && typeof func === "function";
-    }
     var RantEngine = (function () {
         function RantEngine(seed) {
+            var _this = this;
             this.seed = seed;
             this.rngStack = [];
+            this.evaluate = function (rant) {
+                return (rant && typeof rant === "function") ? _this.evaluate(rant()) : rant;
+            };
             this.currentRng = typeof seed !== 'undefined' ? seedrandom(seed + '') : seedrandom();
         }
         RantEngine.prototype.pushSeed = function (seed) {
@@ -23,9 +25,6 @@ var Rant;
             if (typeof seed !== 'undefined') {
                 this.currentRng = this.rngStack.pop();
             }
-        };
-        RantEngine.prototype.evaluate = function (rant) {
-            return isFunction(rant) ? arguments.callee(rant()) : rant;
         };
         RantEngine.prototype.Fixed = function () {
             var _this = this;

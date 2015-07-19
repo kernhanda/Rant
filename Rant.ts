@@ -3,6 +3,7 @@
 /// <reference path="typings/seedrandom/seedrandom.d.ts"/>
 
 import seedrandom = require("seedrandom");
+"use strict";
 module Rant {
   interface RantExpression<T> {
       (seed?: number | string): T | T[];
@@ -13,10 +14,6 @@ module Rant {
   }
 
   export type Ranting<T> = T | T[] | Expression<T> | RantExpression<T>;
-
-  function isFunction(func) {
-    return func && typeof func === "function";
-  }
 
   export class RantEngine {
     private currentRng: prng;
@@ -38,8 +35,8 @@ module Rant {
       }
     }
 
-    private evaluate<T>(rant: Ranting<T>): T | T[] {
-      return isFunction(rant) ? arguments.callee((<Expression<T>>rant)()) : rant;
+    private evaluate = <T>(rant: Ranting<T>): T | T[] => {
+      return (rant && typeof rant === "function") ? this.evaluate((<Expression<T>>rant)()) : <T|T[]>rant;
     }
 
     Fixed<T>(...args: Ranting<T>[]): RantExpression<T> {
