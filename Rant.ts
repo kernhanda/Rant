@@ -38,6 +38,10 @@ module Rant {
       }
     }
 
+    private evaluate<T>(rant: Ranting<T>): T | T[] {
+      return isFunction(rant) ? arguments.callee(rant) : rant;
+    }
+
     Fixed<T>(...args: Ranting<T>[]): RantExpression<T> {
       let argsCopy: Ranting<T>[] = [];
       args = argsCopy.concat.apply(argsCopy, args);
@@ -46,14 +50,12 @@ module Rant {
 
         argsCopy = [];
         for (let i = 0; i < args.length; i++) {
-          let arg = args[i];
-          if (isFunction(arg)) {
-            arg = (<RantExpression<T>>arg)();
-          }
+          let arg = this.evaluate(args[i]);
+
           if (Array.isArray(arg)) {
             argsCopy = argsCopy.concat(arg);
           } else {
-            argsCopy.push(<T>arg);
+            argsCopy.push(arg);
           }
         }
 
@@ -73,12 +75,10 @@ module Rant {
       return (seed?: number | string): T | T[] => {
         this.pushSeed(seed);
         let val:Ranting<T> = args[Math.floor(this.currentRng.quick() * args.length)];
-        if (isFunction(val)) {
-          val = <T|T[]>((<RantExpression<T>>val)());
-        }
+        let returnVal = this.evaluate(val);
         this.popSeed(seed);
 
-        return <T|T[]>val;
+        return returnVal;
       }
     }
 
@@ -102,13 +102,11 @@ module Rant {
           argsCopy[pickedIndex] = argsCopy[interestedLength - 1];
           argsCopy[interestedLength - 1] = val;
 
-          if (isFunction(val)) {
-            val = (<RantExpression<T>>val)();
-          }
+          let returnVal = this.evaluate(val);
 
           this.popSeed(seed);
 
-          return <T|T[]>val;
+          return returnVal;
         }
     }
 
@@ -124,20 +122,18 @@ module Rant {
       return (seed?: number | string): T | T[] => {
         this.pushSeed(seed);
         let prob = Math.floor(this.currentRng.quick() * totalWeight);
-        let returnVal:Ranting<T> = null;
+        let val:Ranting<T> = null;
         for (let i = 0; i < weights.length; ++i) {
           if (prob < weights[i]) {
-            returnVal = values[i];
+            val = values[i];
             break;
           }
         }
 
-        if (isFunction(returnVal)) {
-          returnVal = (<RantExpression<T>>returnVal)();
-        }
+        let returnVal = this.evaluate(val);
 
         this.popSeed(seed);
-        return <T|T[]>returnVal;
+        return returnVal;
       }
     }
 

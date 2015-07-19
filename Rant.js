@@ -24,6 +24,9 @@ var Rant;
                 this.currentRng = this.rngStack.pop();
             }
         };
+        RantEngine.prototype.evaluate = function (rant) {
+            return isFunction(rant) ? arguments.callee(rant) : rant;
+        };
         RantEngine.prototype.Fixed = function () {
             var _this = this;
             var args = [];
@@ -36,10 +39,7 @@ var Rant;
                 _this.pushSeed(seed);
                 argsCopy = [];
                 for (var i = 0; i < args.length; i++) {
-                    var arg = args[i];
-                    if (isFunction(arg)) {
-                        arg = arg();
-                    }
+                    var arg = _this.evaluate(args[i]);
                     if (Array.isArray(arg)) {
                         argsCopy = argsCopy.concat(arg);
                     }
@@ -67,11 +67,9 @@ var Rant;
             return function (seed) {
                 _this.pushSeed(seed);
                 var val = args[Math.floor(_this.currentRng.quick() * args.length)];
-                if (isFunction(val)) {
-                    val = (val());
-                }
+                var returnVal = _this.evaluate(val);
                 _this.popSeed(seed);
-                return val;
+                return returnVal;
             };
         };
         RantEngine.prototype.Shuffle = function () {
@@ -95,11 +93,9 @@ var Rant;
                 var val = argsCopy[pickedIndex];
                 argsCopy[pickedIndex] = argsCopy[interestedLength - 1];
                 argsCopy[interestedLength - 1] = val;
-                if (isFunction(val)) {
-                    val = val();
-                }
+                var returnVal = _this.evaluate(val);
                 _this.popSeed(seed);
-                return val;
+                return returnVal;
             };
         };
         RantEngine.prototype.Weighted = function () {
@@ -118,16 +114,14 @@ var Rant;
             return function (seed) {
                 _this.pushSeed(seed);
                 var prob = Math.floor(_this.currentRng.quick() * totalWeight);
-                var returnVal = null;
+                var val = null;
                 for (var i = 0; i < weights.length; ++i) {
                     if (prob < weights[i]) {
-                        returnVal = values[i];
+                        val = values[i];
                         break;
                     }
                 }
-                if (isFunction(returnVal)) {
-                    returnVal = returnVal();
-                }
+                var returnVal = _this.evaluate(val);
                 _this.popSeed(seed);
                 return returnVal;
             };
