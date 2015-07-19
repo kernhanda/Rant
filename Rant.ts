@@ -8,7 +8,11 @@ interface RantExpression<T> {
     (seed?: number | string): T | T[];
 }
 
-export type Ranting<T> = T | T[] | RantExpression<T>;
+interface Expression<T> {
+  (): T | T[];
+}
+
+export type Ranting<T> = T | T[] | Expression<T> |RantExpression<T>;
 
 function isFunction(func) {
   return func && typeof func === "function";
