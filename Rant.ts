@@ -13,7 +13,7 @@ module Rant {
     (): T | T[];
   }
 
-  export type Ranting<T> = T | T[] | Expression<T> | RantExpression<T>;
+  type Ranting<T> = T | T[] | Expression<T> | RantExpression<T>;
 
   export class RantEngine {
     private currentRng: prng;
