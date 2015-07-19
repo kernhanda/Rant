@@ -102,6 +102,36 @@ var Rant;
                 return val;
             };
         };
+        RantEngine.prototype.Weighted = function () {
+            var _this = this;
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i - 0] = arguments[_i];
+            }
+            var weights = [];
+            var values = [];
+            var totalWeight = 0;
+            for (var i = 0; i < args.length / 2; ++i) {
+                weights.push(totalWeight += args[2 * i]);
+                values.push(args[2 * i + 1]);
+            }
+            return function (seed) {
+                _this.pushSeed(seed);
+                var prob = Math.floor(_this.currentRng.quick() * totalWeight);
+                var returnVal = null;
+                for (var i = 0; i < weights.length; ++i) {
+                    if (prob < weights[i]) {
+                        returnVal = values[i];
+                        break;
+                    }
+                }
+                if (isFunction(returnVal)) {
+                    returnVal = returnVal();
+                }
+                _this.popSeed(seed);
+                return returnVal;
+            };
+        };
         return RantEngine;
     })();
     Rant.RantEngine = RantEngine;
@@ -110,3 +140,4 @@ var rant = new Rant.RantEngine();
 exports.Fixed = Rant.RantEngine.prototype.Fixed.bind(rant);
 exports.Pick = Rant.RantEngine.prototype.Pick.bind(rant);
 exports.Shuffle = Rant.RantEngine.prototype.Shuffle.bind(rant);
+exports.Weighted = Rant.RantEngine.prototype.Weighted.bind(rant);
