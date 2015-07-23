@@ -1,5 +1,3 @@
-/// <reference path="typings/qunit/qunit.d.ts"/>
-/// <reference path="typings/node/node.d.ts"/>
 /// <reference path="typings/seedrandom/seedrandom.d.ts"/>
 
 import seedrandom = require("seedrandom");
