@@ -5,7 +5,7 @@
 import seedrandom = require("seedrandom");
 "use strict";
 module Rant {
-  interface RantExpression<T> {
+  export interface RantExpression<T> {
       (seed?: number | string): T | T[];
   }
 
@@ -13,7 +13,7 @@ module Rant {
     (): T | T[];
   }
 
-  type Ranting<T> = T | T[] | Expression<T> | RantExpression<T>;
+  export type Ranting<T> = T | T[] | Expression<T> | RantExpression<T>;
 
   export class RantEngine {
     private currentRng: prng;
@@ -39,30 +39,36 @@ module Rant {
       return (rant && typeof rant === "function") ? this.evaluate((<Expression<T>>rant)()) : <T|T[]>rant;
     }
 
+    private compressArray = <T>(arr: T | Array<T> | Array<Array<T>>): T | T[] => {
+      if (Array.isArray(arr))
+      {
+        let blankArray: T[] = [];
+        blankArray = blankArray.concat.apply(blankArray, arr);
+        return blankArray.length == 1 ? blankArray[0] : blankArray;
+      }
+      else return arr;
+    }
+
     Fixed<T>(...args: Ranting<T>[]): RantExpression<T> {
       let argsCopy: Ranting<T>[] = [];
       args = argsCopy.concat.apply(argsCopy, args);
       return (seed?: number | string): T | T[] => {
         this.pushSeed(seed);
 
-        argsCopy = [];
+        let returnVal = [];
         for (let i = 0; i < args.length; i++) {
           let arg = this.evaluate(args[i]);
 
           if (Array.isArray(arg)) {
-            argsCopy = argsCopy.concat(arg);
+            returnVal = returnVal.concat(arg);
           } else {
-            argsCopy.push(arg);
+            returnVal.push(<T>arg);
           }
         }
 
         this.popSeed(seed);
 
-        if (argsCopy.length == 1) {
-          return <T>argsCopy[0];
-        } else {
-          return <T[]>argsCopy;
-        }
+        return this.compressArray(returnVal);
       }
     }
 
@@ -75,7 +81,7 @@ module Rant {
         let returnVal = this.evaluate(val);
         this.popSeed(seed);
 
-        return returnVal;
+        return this.compressArray(returnVal);
       }
     }
 
@@ -103,7 +109,7 @@ module Rant {
 
           this.popSeed(seed);
 
-          return returnVal;
+          return this.compressArray(returnVal);
         }
     }
 
@@ -130,14 +136,31 @@ module Rant {
         let returnVal = this.evaluate(val);
 
         this.popSeed(seed);
-        return returnVal;
+
+        return this.compressArray(returnVal);
+      }
+    }
+
+    Repeat<T>(n: Ranting<number>, rant: Ranting<T>): RantExpression<T> {
+      return (seed?: number | string): T | T[] => {
+        let retArray = new Array;
+        let num = this.evaluate(n);
+        for (let i = 0; i < n; ++i) {
+          retArray.push(this.evaluate(rant));
+        }
+
+        let returnVal = [];
+        returnVal = returnVal.concat.apply(returnVal, retArray);
+
+        return this.compressArray(returnVal);
       }
     }
 
   }
 }
 let rant = new Rant.RantEngine();
-export let Fixed = Rant.RantEngine.prototype.Fixed.bind(rant);
-export let Pick = Rant.RantEngine.prototype.Pick.bind(rant);
-export let Shuffle = Rant.RantEngine.prototype.Shuffle.bind(rant);
-export let Weighted = Rant.RantEngine.prototype.Weighted.bind(rant);
+export let Fixed: <T>(...args: Rant.Ranting<T>[]) => Rant.RantExpression<T> = Rant.RantEngine.prototype.Fixed.bind(rant);
+export let Pick: <T>(...args : Rant.Ranting<T>[]) => Rant.RantExpression<T> = Rant.RantEngine.prototype.Pick.bind(rant);
+export let Shuffle: <T>(...args : Rant.Ranting<T>[]) => Rant.RantExpression<T> = Rant.RantEngine.prototype.Shuffle.bind(rant);
+export let Weighted: <T>(...args: any[]) => Rant.RantExpression<T> = Rant.RantEngine.prototype.Weighted.bind(rant);
+export let Repeat: <T>(n: Rant.Ranting<number>, rant: Rant.Ranting<T>) => Rant.RantExpression<T> = Rant.RantEngine.prototype.Repeat.bind(rant);

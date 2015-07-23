@@ -13,6 +13,15 @@ var Rant;
             this.evaluate = function (rant) {
                 return (rant && typeof rant === "function") ? _this.evaluate(rant()) : rant;
             };
+            this.compressArray = function (arr) {
+                if (Array.isArray(arr)) {
+                    var blankArray = [];
+                    blankArray = blankArray.concat.apply(blankArray, arr);
+                    return blankArray.length == 1 ? blankArray[0] : blankArray;
+                }
+                else
+                    return arr;
+            };
             this.currentRng = typeof seed !== 'undefined' ? seedrandom(seed + '') : seedrandom();
         }
         RantEngine.prototype.pushSeed = function (seed) {
@@ -36,23 +45,18 @@ var Rant;
             args = argsCopy.concat.apply(argsCopy, args);
             return function (seed) {
                 _this.pushSeed(seed);
-                argsCopy = [];
+                var returnVal = [];
                 for (var i = 0; i < args.length; i++) {
                     var arg = _this.evaluate(args[i]);
                     if (Array.isArray(arg)) {
-                        argsCopy = argsCopy.concat(arg);
+                        returnVal = returnVal.concat(arg);
                     }
                     else {
-                        argsCopy.push(arg);
+                        returnVal.push(arg);
                     }
                 }
                 _this.popSeed(seed);
-                if (argsCopy.length == 1) {
-                    return argsCopy[0];
-                }
-                else {
-                    return argsCopy;
-                }
+                return _this.compressArray(returnVal);
             };
         };
         RantEngine.prototype.Pick = function () {
@@ -68,7 +72,7 @@ var Rant;
                 var val = args[Math.floor(_this.currentRng.quick() * args.length)];
                 var returnVal = _this.evaluate(val);
                 _this.popSeed(seed);
-                return returnVal;
+                return _this.compressArray(returnVal);
             };
         };
         RantEngine.prototype.Shuffle = function () {
@@ -94,7 +98,7 @@ var Rant;
                 argsCopy[interestedLength - 1] = val;
                 var returnVal = _this.evaluate(val);
                 _this.popSeed(seed);
-                return returnVal;
+                return _this.compressArray(returnVal);
             };
         };
         RantEngine.prototype.Weighted = function () {
@@ -122,7 +126,20 @@ var Rant;
                 }
                 var returnVal = _this.evaluate(val);
                 _this.popSeed(seed);
-                return returnVal;
+                return _this.compressArray(returnVal);
+            };
+        };
+        RantEngine.prototype.Repeat = function (n, rant) {
+            var _this = this;
+            return function (seed) {
+                var retArray = new Array;
+                var num = _this.evaluate(n);
+                for (var i = 0; i < n; ++i) {
+                    retArray.push(_this.evaluate(rant));
+                }
+                var returnVal = [];
+                returnVal = returnVal.concat.apply(returnVal, retArray);
+                return _this.compressArray(returnVal);
             };
         };
         return RantEngine;
@@ -134,3 +151,4 @@ exports.Fixed = Rant.RantEngine.prototype.Fixed.bind(rant);
 exports.Pick = Rant.RantEngine.prototype.Pick.bind(rant);
 exports.Shuffle = Rant.RantEngine.prototype.Shuffle.bind(rant);
 exports.Weighted = Rant.RantEngine.prototype.Weighted.bind(rant);
+exports.Repeat = Rant.RantEngine.prototype.Repeat.bind(rant);
