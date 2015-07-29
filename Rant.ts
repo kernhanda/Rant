@@ -11,6 +11,49 @@ module Rant {
     (): T | T[];
   }
 
+  let isArray = Array.isArray || function(obj: any) {
+    return (obj + '') === '[object Array]';
+  };
+
+  function isArguments(obj: any) {
+    return (obj + '') === '[object Arguments]';
+  }
+
+  function property(key: string) {
+    return function(obj: any) {
+      return obj == null ? void 0 : obj[key];
+    }
+  }
+
+  const MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
+  let getLength = property('length');
+  function isArrayLike(coll: any) {
+    let length = getLength(coll);
+    return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
+  }
+
+  // flatten and supporting functions are based on underscore's implementation.
+  // http://underscorejs.org/docs/underscore.html
+  function flatten(input: any): any[] {
+    let output = [];
+    let idx = 0;
+    for (let i = 0, length = getLength(input); i < length; i++) {
+      let value = input[i];
+      if (isArrayLike(value) && (isArray(value) || isArguments(value))) {
+        value = flatten(value);
+        let j = 0;
+        let len = value.length;
+        output.length += len;
+        while (j < len) {
+          output[idx++] = value[j++];
+        }
+      } else {
+        output[idx++] = value;
+      }
+    }
+    return output;
+  }
+
   export type Ranting<T> = T | T[] | Expression<T> | RantExpression<T>;
 
   export class RantEngine {
@@ -38,18 +81,12 @@ module Rant {
     }
 
     private compressArray = <T>(arr: T | Array<T> | Array<Array<T>>): T | T[] => {
-      if (Array.isArray(arr))
-      {
-        let blankArray: T[] = [];
-        blankArray = blankArray.concat.apply(blankArray, arr);
-        return blankArray.length == 1 ? blankArray[0] : blankArray;
-      }
-      else return arr;
+      arr = flatten(arr);
+      return (<T[]>(arr)).length == 1 ? arr[0] : arr;
     }
 
     Fixed<T>(...args: Ranting<T>[]): RantExpression<T> {
-      let argsCopy: Ranting<T>[] = [];
-      args = argsCopy.concat.apply(argsCopy, args);
+      let argsCopy = <Ranting<T>[]>(flatten(args));
       return (seed?: number | string): T | T[] => {
         this.pushSeed(seed);
 
@@ -71,8 +108,7 @@ module Rant {
     }
 
     Pick<T>(...args : Ranting<T>[]) : RantExpression<T> {
-      let argsCopy: Ranting<T>[] = [];
-      args = argsCopy.concat.apply(argsCopy, args);
+      let argsCopy = <Ranting<T>[]>(flatten(args));
       return (seed?: number | string): T | T[] => {
         this.pushSeed(seed);
         let val:Ranting<T> = args[Math.floor(this.currentRng.quick() * args.length)];
@@ -85,8 +121,7 @@ module Rant {
 
     Shuffle<T>(...args : Ranting<T>[]) : RantExpression<T> {
         let numPicked = 0;
-        let argsCopy: Ranting<T>[] = [];
-        argsCopy = argsCopy.concat.apply(argsCopy, args);
+        let argsCopy = <Ranting<T>[]>(flatten(args));
         return (seed?: number | string): T | T[] => {
           this.pushSeed(seed);
 
@@ -147,10 +182,7 @@ module Rant {
           retArray.push(this.evaluate(rant));
         }
 
-        let returnVal = [];
-        returnVal = returnVal.concat.apply(returnVal, retArray);
-
-        return this.compressArray(returnVal);
+        return this.compressArray(retArray);
       }
     }
 

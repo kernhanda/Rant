@@ -1,10 +1,45 @@
-/// <reference path="typings/qunit/qunit.d.ts"/>
-/// <reference path="typings/node/node.d.ts"/>
 /// <reference path="typings/seedrandom/seedrandom.d.ts"/>
 var seedrandom = require("seedrandom");
 "use strict";
 var Rant;
 (function (Rant) {
+    var isArray = Array.isArray || function (obj) {
+        return (obj + '') === '[object Array]';
+    };
+    function isArguments(obj) {
+        return (obj + '') === '[object Arguments]';
+    }
+    function property(key) {
+        return function (obj) {
+            return obj == null ? void 0 : obj[key];
+        };
+    }
+    var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
+    var getLength = property('length');
+    function isArrayLike(coll) {
+        var length = getLength(coll);
+        return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
+    }
+    function flatten(input) {
+        var output = [];
+        var idx = 0;
+        for (var i = 0, length_1 = getLength(input); i < length_1; i++) {
+            var value = input[i];
+            if (isArrayLike(value) && (isArray(value) || isArguments(value))) {
+                value = flatten(value);
+                var j = 0;
+                var len = value.length;
+                output.length += len;
+                while (j < len) {
+                    output[idx++] = value[j++];
+                }
+            }
+            else {
+                output[idx++] = value;
+            }
+        }
+        return output;
+    }
     var RantEngine = (function () {
         function RantEngine(seed) {
             var _this = this;
@@ -14,13 +49,8 @@ var Rant;
                 return (rant && typeof rant === "function") ? _this.evaluate(rant()) : rant;
             };
             this.compressArray = function (arr) {
-                if (Array.isArray(arr)) {
-                    var blankArray = [];
-                    blankArray = blankArray.concat.apply(blankArray, arr);
-                    return blankArray.length == 1 ? blankArray[0] : blankArray;
-                }
-                else
-                    return arr;
+                arr = flatten(arr);
+                return (arr).length == 1 ? arr[0] : arr;
             };
             this.currentRng = typeof seed !== 'undefined' ? seedrandom(seed + '') : seedrandom();
         }
@@ -41,8 +71,7 @@ var Rant;
             for (var _i = 0; _i < arguments.length; _i++) {
                 args[_i - 0] = arguments[_i];
             }
-            var argsCopy = [];
-            args = argsCopy.concat.apply(argsCopy, args);
+            var argsCopy = (flatten(args));
             return function (seed) {
                 _this.pushSeed(seed);
                 var returnVal = [];
@@ -65,8 +94,7 @@ var Rant;
             for (var _i = 0; _i < arguments.length; _i++) {
                 args[_i - 0] = arguments[_i];
             }
-            var argsCopy = [];
-            args = argsCopy.concat.apply(argsCopy, args);
+            var argsCopy = (flatten(args));
             return function (seed) {
                 _this.pushSeed(seed);
                 var val = args[Math.floor(_this.currentRng.quick() * args.length)];
@@ -82,8 +110,7 @@ var Rant;
                 args[_i - 0] = arguments[_i];
             }
             var numPicked = 0;
-            var argsCopy = [];
-            argsCopy = argsCopy.concat.apply(argsCopy, args);
+            var argsCopy = (flatten(args));
             return function (seed) {
                 _this.pushSeed(seed);
                 var interestedLength = argsCopy.length - numPicked;
@@ -137,9 +164,7 @@ var Rant;
                 for (var i = 0; i < n; ++i) {
                     retArray.push(_this.evaluate(rant));
                 }
-                var returnVal = [];
-                returnVal = returnVal.concat.apply(returnVal, retArray);
-                return _this.compressArray(returnVal);
+                return _this.compressArray(retArray);
             };
         };
         return RantEngine;
