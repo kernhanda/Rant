@@ -4,10 +4,13 @@ var seedrandom = require("seedrandom");
 var Rant;
 (function (Rant) {
     var isArray = Array.isArray || function (obj) {
-        return (obj + '') === '[object Array]';
+        return Object.prototype.toString.call(obj) === '[object Array]';
     };
     function isArguments(obj) {
-        return (obj + '') === '[object Arguments]';
+        return Object.prototype.toString.call(obj) === '[object Arguments]';
+    }
+    function isString(obj) {
+        return Object.prototype.toString.call(obj) === '[object String]';
     }
     function property(key) {
         return function (obj) {
@@ -23,19 +26,24 @@ var Rant;
     function flatten(input) {
         var output = [];
         var idx = 0;
-        for (var i = 0, length_1 = getLength(input); i < length_1; i++) {
-            var value = input[i];
-            if (isArrayLike(value) && (isArray(value) || isArguments(value))) {
-                value = flatten(value);
-                var j = 0;
-                var len = value.length;
-                output.length += len;
-                while (j < len) {
-                    output[idx++] = value[j++];
+        if (isString(input)) {
+            output = [input];
+        }
+        else {
+            for (var i = 0, length_1 = getLength(input); i < length_1; i++) {
+                var value = input[i];
+                if (isArrayLike(value) && (isArray(value) || isArguments(value))) {
+                    value = flatten(value);
+                    var j = 0;
+                    var len = value.length;
+                    output.length += len;
+                    while (j < len) {
+                        output[idx++] = value[j++];
+                    }
                 }
-            }
-            else {
-                output[idx++] = value;
+                else {
+                    output[idx++] = value;
+                }
             }
         }
         return output;
@@ -159,12 +167,29 @@ var Rant;
         RantEngine.prototype.Repeat = function (n, rant) {
             var _this = this;
             return function (seed) {
+                _this.pushSeed(seed);
                 var retArray = new Array;
                 var num = _this.evaluate(n);
                 for (var i = 0; i < n; ++i) {
                     retArray.push(_this.evaluate(rant));
                 }
+                _this.popSeed(seed);
                 return _this.compressArray(retArray);
+            };
+        };
+        RantEngine.prototype.Create = function (t) {
+            var _this = this;
+            var args = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                args[_i - 1] = arguments[_i];
+            }
+            return function (seed) {
+                var params = [];
+                params.length = args.length;
+                for (var i = 0; i < params.length; i++) {
+                    params[i] = _this.evaluate(args[i]);
+                }
+                return new (Function.prototype.bind.apply(t, [null].concat(params)));
             };
         };
         return RantEngine;
@@ -177,3 +202,4 @@ exports.Pick = Rant.RantEngine.prototype.Pick.bind(rant);
 exports.Shuffle = Rant.RantEngine.prototype.Shuffle.bind(rant);
 exports.Weighted = Rant.RantEngine.prototype.Weighted.bind(rant);
 exports.Repeat = Rant.RantEngine.prototype.Repeat.bind(rant);
+exports.Create = Rant.RantEngine.prototype.Create.bind(rant);

@@ -12,11 +12,15 @@ module Rant {
   }
 
   let isArray = Array.isArray || function(obj: any) {
-    return (obj + '') === '[object Array]';
+    return Object.prototype.toString.call(obj) === '[object Array]';
   };
 
   function isArguments(obj: any) {
-    return (obj + '') === '[object Arguments]';
+    return Object.prototype.toString.call(obj) === '[object Arguments]';
+  }
+
+  function isString(obj: any) {
+    return Object.prototype.toString.call(obj) === '[object String]';
   }
 
   function property(key: string) {
@@ -37,18 +41,22 @@ module Rant {
   function flatten(input: any): any[] {
     let output = [];
     let idx = 0;
-    for (let i = 0, length = getLength(input); i < length; i++) {
-      let value = input[i];
-      if (isArrayLike(value) && (isArray(value) || isArguments(value))) {
-        value = flatten(value);
-        let j = 0;
-        let len = value.length;
-        output.length += len;
-        while (j < len) {
-          output[idx++] = value[j++];
+    if (isString(input)) {
+        output = [input];
+    } else {
+      for (let i = 0, length = getLength(input); i < length; i++) {
+        let value = input[i];
+        if (isArrayLike(value) && (isArray(value) || isArguments(value))) {
+          value = flatten(value);
+          let j = 0;
+          let len = value.length;
+          output.length += len;
+          while (j < len) {
+            output[idx++] = value[j++];
+          }
+        } else {
+          output[idx++] = value;
         }
-      } else {
-        output[idx++] = value;
       }
     }
     return output;
@@ -176,16 +184,30 @@ module Rant {
 
     Repeat<T>(n: Ranting<number>, rant: Ranting<T>): RantExpression<T> {
       return (seed?: number | string): T | T[] => {
+        this.pushSeed(seed);
         let retArray = new Array;
         let num = this.evaluate(n);
         for (let i = 0; i < n; ++i) {
           retArray.push(this.evaluate(rant));
         }
 
+        this.popSeed(seed);
+
         return this.compressArray(retArray);
       }
     }
 
+    Create<T>(t: any, ...args: any[]): RantExpression<T> {
+      return (seed?: number | string): T => {
+        let params = [];
+        params.length = args.length;
+        for (let i = 0; i < params.length; i++) {
+          params[i] = this.evaluate(args[i]);
+        }
+
+        return <T>new (Function.prototype.bind.apply(t, [null].concat(params)));
+      }
+    }
   }
 }
 let rant = new Rant.RantEngine();
@@ -194,3 +216,4 @@ export let Pick: <T>(...args : Rant.Ranting<T>[]) => Rant.RantExpression<T> = Ra
 export let Shuffle: <T>(...args : Rant.Ranting<T>[]) => Rant.RantExpression<T> = Rant.RantEngine.prototype.Shuffle.bind(rant);
 export let Weighted: <T>(...args: any[]) => Rant.RantExpression<T> = Rant.RantEngine.prototype.Weighted.bind(rant);
 export let Repeat: <T>(n: Rant.Ranting<number>, rant: Rant.Ranting<T>) => Rant.RantExpression<T> = Rant.RantEngine.prototype.Repeat.bind(rant);
+export let Create: <T>(t: any, ...args: any[]) => Rant.RantExpression<T> = Rant.RantEngine.prototype.Create.bind(rant);
